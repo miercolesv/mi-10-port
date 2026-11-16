@@ -1,0 +1,66 @@
+pkgname=firmware-xiaomi-umi
+pkgver=20261115
+pkgrel=0
+pkgdesc="Firmware for Xiaomi Mi 10"
+subpackages="
+	$pkgname-adreno
+	$pkgname-initramfs
+"
+url="https://github.com/colorgarden/umi-mainline"
+arch="aarch64"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps pmb:cross-native"
+
+# Files taken from firmware/qcom/ of colorgarden/umi-mainline @ e38cb76b41c9.
+# The zap shader is signed for this device; a650_sqe.fw is the linux-firmware
+# one. Kept as local sources until a firmware repository for umi exists.
+source="
+	30-gpu-firmware.files
+	a650_gmu.bin
+	a650_sqe.fw
+	a650_zap.b00
+	a650_zap.b01
+	a650_zap.b02
+	a650_zap.mbn
+	a650_zap.mdt
+"
+
+package() {
+	# parent package is empty
+	mkdir -p "$pkgdir"
+}
+
+# The device tree asks for qcom/a650_zap.mdt, so these go to the generic path.
+adreno() {
+	pkgdesc="Xiaomi Mi 10 Adreno 650 firmware"
+	replaces="linux-firmware-qcom firmware-qcom-adreno-a650"
+
+	install -Dm644 \
+		"$srcdir"/a650_gmu.bin \
+		"$srcdir"/a650_sqe.fw \
+		"$srcdir"/a650_zap.b00 \
+		"$srcdir"/a650_zap.b01 \
+		"$srcdir"/a650_zap.b02 \
+		"$srcdir"/a650_zap.mbn \
+		"$srcdir"/a650_zap.mdt \
+		-t "$subpkgdir/usr/lib/firmware/qcom/"
+}
+
+# msm/adreno is built into the kernel and probes before the rootfs is mounted.
+initramfs() {
+	pkgdesc="Xiaomi Mi 10 firmware to be included in the initramfs"
+
+	install -Dm644 "$srcdir/30-gpu-firmware.files" \
+		"$subpkgdir/usr/share/mkinitfs/files/30-gpu-firmware.files"
+}
+
+sha512sums="
+773a4109bb0418e9181e0b7a3566d325d43a00b6ce42688e35e25538056a5c09d3b1688839b1442dbeeed57b24e492b79bea0ad0126848de23430a499765277f  30-gpu-firmware.files
+e8e8de215b2bb29936acc50c6ede8b44829c1903c889d990b395c5d596f06c441a7845da4e18fbae7d207086abb769e0105e715752853e489775b9fc7a4a2f08  a650_gmu.bin
+478ebed8d5fee34b97037de041737afde77756ac7162232f80d4cf0f13a34b65337be29dbb04558f4c183353c04518b3c17583bae98632dd6e32fb433d141b4c  a650_sqe.fw
+f2111b9ca667ee5994fe49b64f14ed9f48a7756c94b7e9f1d51f820ef517655f89f837230997bc425a8775abba3a28f2c236cad2ffaa9d369569fa9b54005e1f  a650_zap.b00
+35e9e8b36905ab743ac46f65b5111eac7642ef85b6bd4887d98c694acdf2be0ae7eeb2e3a55c1933dbed5ce170bd406a1f6852740b4f7a84be724298e23386fe  a650_zap.b01
+9352e2ca6c12cc0e359fcc449eaea5392646d5f7252659639679ca32f7f7a9e6cb7271a0e19c7a73bd0fe81c7669d6c5370c475334c2cda857888af0e60246d8  a650_zap.b02
+f7ce57ad5721d2317944518251d7f1e38807e16955e2df09ac3867dbb6c35eb47b656f3842b83bde914ba699f6568761568d34a045ca4a8ba0f837d46233dc7d  a650_zap.mbn
+a16e4fad72291d79eb1c197a8b8a37074a84a5c0c3794c8ced2ca85084231a281d480918ddebf737f72d944e1d9e401cf8c1b153752f27d224462bfe793ce7b8  a650_zap.mdt
+"

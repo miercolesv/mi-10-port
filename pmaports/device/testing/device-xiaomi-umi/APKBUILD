@@ -1,0 +1,34 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-umi
+pkgdesc="Xiaomi Mi 10"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-xiaomi-umi-adreno
+	firmware-xiaomi-umi-initramfs
+	linux-firmware-ath11k
+	linux-firmware-qca
+	linux-xiaomi-umi
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+source="deviceinfo"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+ea28c6a101751745fcf7d493ad40d9f7f485e201587fe1f2ceffb9f339e132260d82a154c43afb537e81f65f3a5e8b0ebaab0873db9f2822dacb01294d206b6e  deviceinfo
+"

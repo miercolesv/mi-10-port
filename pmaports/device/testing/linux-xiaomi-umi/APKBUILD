@@ -1,0 +1,92 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/defconfig
+#   + config fragment of github.com/colorgarden/umi-mainline
+#   + postmarketOS kconfigcheck rules (see tools/ in the port repo)
+_flavor="xiaomi-umi"
+pkgname=linux-$_flavor
+pkgver=6.12.94
+pkgrel=0
+pkgdesc="Close-to-mainline LTS kernel for Xiaomi Mi 10"
+arch="aarch64"
+_carch="arm64"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="
+	!check
+	!strip
+	!tracedeps
+	pmb:cross-native
+"
+makedepends="
+	bash
+	bison
+	clang
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	linux-headers
+	lld
+	llvm
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	sed
+	zstd
+"
+
+# Source
+_config="config-$_flavor.$arch"
+source="
+	linux-$pkgver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$pkgver.tar.xz
+	$_config
+	0001-dmaengine-qcom-gpi-add-sm8250-EE-offset-variants.patch
+	0002-drm-panel-add-Xiaomi-Mi-10-umi-DSC-command-mode-AMOL.patch
+	0003-Input-touchscreen-add-vendor-derived-ST-FTS-driver-f.patch
+	0004-power-supply-add-Qualcomm-PM8150B-fuel-gauge-SMB5-ch.patch
+	0005-arm64-dts-qcom-add-Xiaomi-Mi-10-umi.patch
+"
+builddir="$srcdir/linux-$pkgver"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+
+	# The config was generated with a different clang than the one in the
+	# build chroot. Resolve compiler-dependent symbols non-interactively,
+	# otherwise the build stops at a syncconfig prompt.
+	make ARCH="$_carch" LLVM=1 olddefconfig
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	make modules_install zinstall dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+9368813d7c2b17d0a893c1becd0d631dac9030a81c0505b463ad4d8c72edbdaeada53c24bc36ada0b84ff0ff78ae363bdf9aeeb8cff6a0d01bc6fc00b2fa275b  linux-6.12.94.tar.xz
+5c8c21539adc61744a47fb2169717fc17a4540b432ac48f88c2c8358d240e9774fe383497a4daffa5a02a88d3c721612e9c380083c6356d7a41f99f0918a918c  config-xiaomi-umi.aarch64
+9c8167f91683441bd850b9e5f667e0bee6f11c1e4d57bfef4b792bc820ebeef9835f0b8be55cc1d763bf538422bfca4328be0ab85b3ced9d124a3b8b82999b9f  0001-dmaengine-qcom-gpi-add-sm8250-EE-offset-variants.patch
+ff097e54c7f51ede80193a90e3b8c9d442e5aec37f470c55cbfb792f19b9a87a77a728e4179cb5dce871f909a415acd2832e670253d9a86bbdc2030672e9bd56  0002-drm-panel-add-Xiaomi-Mi-10-umi-DSC-command-mode-AMOL.patch
+7d20326a39fd3e3dd2bcaaa213eaae1aea13eb653ff55ed6e761d6151fdd83ec4eea7b18ba5f170fc472546cd1b7cf23fe47f44ca77d7a7bd432c78d4521c6e4  0003-Input-touchscreen-add-vendor-derived-ST-FTS-driver-f.patch
+d6d3f3ca6d437637924ee3fec3bc56564adbee38f4d1b00dce5a926bf71605f46589e1e283a5042e34ba37548c22ae91eb0e6380023d47b6352b2a9c9dbe6cc5  0004-power-supply-add-Qualcomm-PM8150B-fuel-gauge-SMB5-ch.patch
+7ade5d7c57ecb7bcadf4dddffb570ea753e78d9fbe29df16e07bf82058538a8b51638e4f2f1306a16798a269f2ccbcfcde6888f8927c9731bbf8d4aded586306  0005-arm64-dts-qcom-add-Xiaomi-Mi-10-umi.patch
+"
