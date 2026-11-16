@@ -16,8 +16,8 @@ request.
 | Device tree | compiles (clang 18), `xiaomi,umi`, msm-id `0x164 0x20001`, board-id `0x2b 0` |
 | Added drivers (panel, ST FTS touch, fuel gauge, SMB5 charger, GPI fix) | compile (clang 18) |
 | Kernel config | resolves; meets the pmaports `default` kconfig rules except BTF debug info |
-| Full kernel build | **not done yet** |
-| `pmbootstrap build` / `install` | runs in GitHub Actions; see the Actions tab for the latest result |
+| Full kernel build | builds in GitHub Actions (Alpine clang 23, about 70 min on 4 cores) |
+| `pmbootstrap install` / `boot.img` | builds; header v2, gzip kernel, DTB and GPU firmware in place (checked by unpacking the image) |
 | Boot on the phone | **not tested yet** |
 
 Target hardware variant: CSOT panel (`j2_mp_42_02_0b`, hwlevel MP,
