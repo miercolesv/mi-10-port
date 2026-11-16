@@ -1,9 +1,9 @@
-# Reference: <https://postmarketos.org/devicepkg>
+# Reference: <https://nura.eco/devicepkg>
 pkgname=device-xiaomi-umi
 pkgdesc="Xiaomi Mi 10"
 pkgver=1
 pkgrel=0
-url="https://postmarketos.org"
+url="https://nura.eco"
 license="MIT"
 arch="aarch64"
 options="!check !archcheck"
@@ -30,5 +30,5 @@ package() {
 }
 
 sha512sums="
-ea28c6a101751745fcf7d493ad40d9f7f485e201587fe1f2ceffb9f339e132260d82a154c43afb537e81f65f3a5e8b0ebaab0873db9f2822dacb01294d206b6e  deviceinfo
+38e487901d39afe225a8af5b87e78094600849e49a783a5f60fac6e9755686351e76221b7993658920b12a8836d277d1d71260362b9ea418320d6f827f6527ee  deviceinfo
 "

@@ -1,6 +1,6 @@
-# postmarketOS on the Xiaomi Mi 10 (umi)
+# Nura on the Xiaomi Mi 10 (umi)
 
-Port of postmarketOS (now Nura) to the Xiaomi Mi 10 5G, codename `umi`
+Port of Nura (formerly postmarketOS) to the Xiaomi Mi 10 5G, codename `umi`
 (SM8250 / Snapdragon 865, A-only, UFS).
 
 Milestone 1 is "a working image first": package the existing mainline bring-up

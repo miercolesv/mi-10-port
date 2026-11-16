@@ -14,7 +14,7 @@ SRCREV=$(git -C "$WS" rev-parse --short HEAD)
 commit() {
 	git -C "$TREE" add -A
 	git -C "$TREE" -c user.name=pmaports -c user.email=pmaports@localhost \
-		commit -q --author="$AUTHOR" -m "$1" -m "Imported from github.com/colorgarden/umi-mainline @ $SRCREV for the postmarketOS port. Not upstreamable in this form."
+		commit -q --author="$AUTHOR" -m "$1" -m "Imported from github.com/colorgarden/umi-mainline @ $SRCREV for the Nura port. Not upstreamable in this form."
 }
 
 # ---- 1. dmaengine: gpi EE offsets -------------------------------------------

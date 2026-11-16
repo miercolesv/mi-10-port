@@ -4,7 +4,7 @@ Date: Mon, 16 Nov 2026 22:06:46 +0000
 Subject: [PATCH 3/5] Input: touchscreen: add vendor-derived ST FTS driver for
  Xiaomi Mi 10
 
-Imported from github.com/colorgarden/umi-mainline @ e38cb76 for the postmarketOS port. Not upstreamable in this form.
+Imported from github.com/colorgarden/umi-mainline @ e38cb76 for the Nura port. Not upstreamable in this form.
 ---
  drivers/input/touchscreen/Kconfig             |     1 +
  drivers/input/touchscreen/Makefile            |     1 +

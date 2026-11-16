@@ -4,7 +4,7 @@ Date: Mon, 16 Nov 2026 22:06:46 +0000
 Subject: [PATCH 4/5] power: supply: add Qualcomm PM8150B fuel gauge, SMB5
  charger and BQ25970
 
-Imported from github.com/colorgarden/umi-mainline @ e38cb76 for the postmarketOS port. Not upstreamable in this form.
+Imported from github.com/colorgarden/umi-mainline @ e38cb76 for the Nura port. Not upstreamable in this form.
 ---
  drivers/power/supply/Kconfig                |   19 +
  drivers/power/supply/Makefile               |    3 +

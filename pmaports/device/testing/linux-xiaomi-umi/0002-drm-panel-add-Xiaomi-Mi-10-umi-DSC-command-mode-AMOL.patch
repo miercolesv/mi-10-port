@@ -4,7 +4,7 @@ Date: Mon, 16 Nov 2026 22:06:45 +0000
 Subject: [PATCH 2/5] drm/panel: add Xiaomi Mi 10 (umi) DSC command-mode AMOLED
  panel driver
 
-Imported from github.com/colorgarden/umi-mainline @ e38cb76 for the postmarketOS port. Not upstreamable in this form.
+Imported from github.com/colorgarden/umi-mainline @ e38cb76 for the Nura port. Not upstreamable in this form.
 ---
  drivers/gpu/drm/panel/Kconfig            |  14 +
  drivers/gpu/drm/panel/Makefile           |   1 +

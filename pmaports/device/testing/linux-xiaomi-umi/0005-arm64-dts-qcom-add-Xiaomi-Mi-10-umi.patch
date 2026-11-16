@@ -3,7 +3,7 @@ From: colorgarden <colorgarden@outlook.com>
 Date: Mon, 16 Nov 2026 22:06:47 +0000
 Subject: [PATCH 5/5] arm64: dts: qcom: add Xiaomi Mi 10 (umi)
 
-Imported from github.com/colorgarden/umi-mainline @ e38cb76 for the postmarketOS port. Not upstreamable in this form.
+Imported from github.com/colorgarden/umi-mainline @ e38cb76 for the Nura port. Not upstreamable in this form.
 ---
  arch/arm64/boot/dts/qcom/Makefile             |   2 +
  .../dts/qcom/sm8250-xiaomi-umi-common.dtsi    | 860 ++++++++++++++++++
