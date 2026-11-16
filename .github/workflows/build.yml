@@ -1,0 +1,110 @@
+name: Build boot image
+
+# Builds the kernel and a Nura (postmarketOS) boot.img for the Xiaomi Mi 10 on a
+# native arm64 GitHub runner. Download the result from the run's "Artifacts"
+# and start it with:  fastboot boot boot.img   (RAM boot, nothing is flashed)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ui:
+        description: "UI to install (console, phosh, plasma-mobile, ...)"
+        default: console
+      debug_shell:
+        description: "Stop in the initramfs debug shell (telnet 172.16.42.1)"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths:
+      - "pmaports/**"
+      - ".github/workflows/build.yml"
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 300
+    env:
+      DEVICE: xiaomi-umi
+      UI: ${{ inputs.ui || 'console' }}
+      DEBUG_SHELL: ${{ github.event_name == 'push' || inputs.debug_shell }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pmbootstrap
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq git kpartx openssl python3
+          git clone --depth 1 https://gitlab.nura.eco/postmarketOS/pmbootstrap.git "$HOME/pmbootstrap"
+          git -C "$HOME/pmbootstrap" log -1 --format='pmbootstrap %h %ad'
+          mkdir -p "$HOME/.local/bin"
+          ln -s "$HOME/pmbootstrap/pmbootstrap.py" "$HOME/.local/bin/pmbootstrap"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          nproc; free -g | sed -n 2p; df -h / | tail -1
+
+      - name: Initialise pmbootstrap and add the umi packages
+        run: |
+          # "yes" is killed by SIGPIPE once init is done; that is not a failure
+          set +o pipefail
+          yes '' | pmbootstrap --details-to-stdout init --shallow-initial-clone
+          set -o pipefail
+          APORTS="$(pmbootstrap config aports)"
+          git -C "$APORTS" log -1 --format='pmaports %h %ad'
+          cp -r pmaports/device/testing/* "$APORTS/device/testing/"
+          pmbootstrap config device "$DEVICE"
+          pmbootstrap config ui "$UI"
+
+      - name: Build kernel, firmware and device packages
+        run: |
+          pmbootstrap --details-to-stdout -y build --arch aarch64 \
+            firmware-xiaomi-umi linux-xiaomi-umi device-xiaomi-umi
+
+      - name: Build root filesystem and boot image
+        run: |
+          ADD=""
+          if [ "$DEBUG_SHELL" = "true" ]; then
+            ADD="--add postmarketos-mkinitfs-hook-debug-shell"
+          fi
+          # --no-image: only the chroot is needed to get boot.img
+          pmbootstrap --details-to-stdout -y install --password 147147 --no-image $ADD
+
+      - name: Collect boot files
+        run: |
+          WORK="$(pmbootstrap config work)"
+          BOOT="$WORK/chroot_rootfs_$DEVICE/boot"
+          sudo ls -la "$BOOT"
+          mkdir out
+          sudo cp "$BOOT/boot.img" out/boot.img
+          sudo sh -c "cp $BOOT/vmlinuz* $BOOT/initramfs* out/ 2>/dev/null || true"
+          sudo cp "$BOOT/dtbs/qcom/sm8250-xiaomi-umi.dtb" out/ 2>/dev/null || true
+          sudo chown -R "$(id -u):$(id -g)" out
+          (cd out && sha256sum * | tee SHA256SUMS)
+          {
+            echo "### boot.img for $DEVICE (UI: $UI, debug shell: $DEBUG_SHELL)"
+            echo '```'
+            cat out/SHA256SUMS
+            ls -la out
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boot-xiaomi-umi
+          path: out/
+          retention-days: 14
+
+      - name: Show the end of the pmbootstrap log on failure
+        if: failure()
+        run: |
+          WORK="$(pmbootstrap config work 2>/dev/null || echo "$HOME/.local/var/pmbootstrap")"
+          sudo tail -n 150 "$WORK/log.txt" || true
+          # also as annotations, so the cause is visible without opening the log
+          sudo grep -nE "error:|Error |ERROR|FAILED|undefined|No such file" "$WORK/log.txt" 2>/dev/null \
+            | tail -n 8 | while IFS= read -r line; do echo "::error::${line}"; done || true

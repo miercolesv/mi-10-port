@@ -17,7 +17,7 @@ request.
 | Added drivers (panel, ST FTS touch, fuel gauge, SMB5 charger, GPI fix) | compile (clang 18) |
 | Kernel config | resolves; meets the pmaports `default` kconfig rules except BTF debug info |
 | Full kernel build | **not done yet** |
-| `pmbootstrap build` / `install` | **not run yet** |
+| `pmbootstrap build` / `install` | runs in GitHub Actions; see the Actions tab for the latest result |
 | Boot on the phone | **not tested yet** |
 
 Target hardware variant: CSOT panel (`j2_mp_42_02_0b`, hwlevel MP,
@@ -34,6 +34,7 @@ pmaports/device/testing/
 tools/
   make-series.sh         regenerates the patch series from an umi-mainline checkout
   kconfig-frag.py        pmaports kconfigcheck.toml -> config fragment / checker
+.github/workflows/build.yml   builds kernel + boot.img online
   config-fragments/      the four fragments merged on top of arm64 defconfig, in order
 ```
 
@@ -50,15 +51,27 @@ tools/
 
 ## Build and first boot
 
+### Online (GitHub Actions)
+
+`.github/workflows/build.yml` builds the kernel and `boot.img` on a native
+arm64 GitHub runner on every push that touches `pmaports/`, or by hand from the
+Actions tab ("Build boot image" > "Run workflow"). Download `boot-xiaomi-umi`
+from the run's Artifacts, unzip it, then on any machine with `fastboot`:
+
+```sh
+fastboot boot boot.img                 # RAM only, nothing is flashed
+```
+
+### Locally
+
 On a Linux machine with pmbootstrap 3.x and `fastboot`:
 
 ```sh
 pmbootstrap init                       # once, so pmaports gets cloned
 cp -r pmaports/device/testing/* "$(pmbootstrap config aports)/device/testing/"
 pmbootstrap init                       # vendor xiaomi, device umi, pick a UI
-pmbootstrap build linux-xiaomi-umi     # the long step
-pmbootstrap initfs hook_add debug-shell
-pmbootstrap install
+pmbootstrap build --arch aarch64 linux-xiaomi-umi   # the long step
+pmbootstrap install --add postmarketos-mkinitfs-hook-debug-shell
 pmbootstrap flasher boot               # fastboot boot: RAM only, nothing is flashed
 ```
 
