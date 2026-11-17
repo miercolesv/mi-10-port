@@ -1,7 +1,7 @@
 # Reference: <https://nura.eco/devicepkg>
 pkgname=device-xiaomi-umi
 pkgdesc="Xiaomi Mi 10"
-pkgver=1
+pkgver=2
 pkgrel=0
 url="https://nura.eco"
 license="MIT"
@@ -19,7 +19,11 @@ depends="
 	unl0kr-fbforcerefresh
 "
 makedepends="devicepkg-dev"
-source="deviceinfo"
+source="
+	90-device-xiaomi-umi.rules
+	deviceinfo
+	initfs-hook.sh
+"
 
 build() {
 	devicepkg_build $startdir $pkgname
@@ -30,5 +34,7 @@ package() {
 }
 
 sha512sums="
+2a061fd6a5588e0a9b213c3f44cacc433b311635c17a1c29a94b1d5a4e1428b9f73d9b7505cb146ece586538138ea7be9591046b7270f7e724f47dc9fca8a8e4  90-device-xiaomi-umi.rules
 38e487901d39afe225a8af5b87e78094600849e49a783a5f60fac6e9755686351e76221b7993658920b12a8836d277d1d71260362b9ea418320d6f827f6527ee  deviceinfo
+a2dcc16b8a7cb1c76776adcfc532274d8ea18a09ca0331d3e5abfa80ea25918e76f83c545952ec4faad75f26da4504cdac530827eaba79d8ad75b7cdf28d7048  initfs-hook.sh
 "

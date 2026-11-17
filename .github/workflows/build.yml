@@ -49,6 +49,14 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           nproc; free -g | sed -n 2p; df -h / | tail -1
 
+      # The kernel takes over an hour to build. Keep the built package, and the
+      # throwaway key it was signed with, until the kernel sources change.
+      - name: Restore cached kernel package
+        uses: actions/cache@v4
+        with:
+          path: ~/kernel-cache
+          key: kernel-${{ hashFiles('pmaports/device/testing/linux-xiaomi-umi/**') }}
+
       - name: Initialise pmbootstrap and add the umi packages
         run: |
           # "yes" is killed by SIGPIPE once init is done; that is not a failure
@@ -61,10 +69,58 @@ jobs:
           pmbootstrap config device "$DEVICE"
           pmbootstrap config ui "$UI"
 
+          if [ "$DEBUG_SHELL" = "true" ]; then
+            # stop in the initramfs debug shell instead of looking for a rootfs
+            DEV="$APORTS/device/testing/device-xiaomi-umi"
+            sed -i 's|^\(deviceinfo_kernel_cmdline=".*\)"$|\1 pmos.debug-shell"|' "$DEV/deviceinfo"
+            grep '^deviceinfo_kernel_cmdline' "$DEV/deviceinfo"
+            sum="$(sha512sum "$DEV/deviceinfo" | cut -d' ' -f1)"
+            sed -i "s|^[0-9a-f]\{128\}  deviceinfo\$|$sum  deviceinfo|" "$DEV/APKBUILD"
+          fi
+
+          WORK="$(pmbootstrap config work)"
+          CACHE="$HOME/kernel-cache"
+          if ls "$CACHE"/apk/linux-xiaomi-umi-*.apk >/dev/null 2>&1 \
+              && [ -f "$CACHE/config_abuild/abuild.conf" ]; then
+            echo "Cached kernel package found, restoring its signing key"
+            sudo mkdir -p "$WORK/config_abuild" "$WORK/config_apk_keys"
+            sudo cp -a "$CACHE"/config_abuild/. "$WORK/config_abuild/"
+            sudo chown -R 12345:12345 "$WORK/config_abuild"
+            sudo cp "$CACHE"/config_abuild/*.pub "$WORK/config_apk_keys/"
+            echo "HAVE_KERNEL_CACHE=true" >> "$GITHUB_ENV"
+          fi
+
       - name: Build kernel, firmware and device packages
         run: |
-          pmbootstrap --details-to-stdout -y build --arch aarch64 \
-            firmware-xiaomi-umi linux-xiaomi-umi device-xiaomi-umi
+          WORK="$(pmbootstrap config work)"
+          CACHE="$HOME/kernel-cache"
+          pmbootstrap --details-to-stdout -y build --arch aarch64 firmware-xiaomi-umi
+          PKGS="$(dirname "$(sudo find "$WORK/packages" -name 'firmware-xiaomi-umi-2*.apk' | head -n1)")"
+          echo "local package repository: $PKGS"
+
+          if [ "${HAVE_KERNEL_CACHE:-}" = "true" ]; then
+            sudo cp "$CACHE"/apk/linux-xiaomi-umi-*.apk "$PKGS/"
+            sudo chown --reference="$PKGS/APKINDEX.tar.gz" "$PKGS"/linux-xiaomi-umi-*.apk
+            pmbootstrap --details-to-stdout -y index
+            REL="${PKGS#"$WORK/packages/"}"
+            if pmbootstrap -y chroot -- sh -c "apk verify /mnt/pmbootstrap/packages/$REL/linux-xiaomi-umi-*.apk"; then
+              echo "Using the cached kernel package"
+            else
+              echo "::warning::Cached kernel package is not trusted here, rebuilding the kernel"
+              sudo rm -f "$PKGS"/linux-xiaomi-umi-*.apk
+              pmbootstrap --details-to-stdout -y index
+            fi
+          fi
+
+          pmbootstrap --details-to-stdout -y build --arch aarch64 linux-xiaomi-umi device-xiaomi-umi
+
+          # keep the kernel package and its signing key for the next run
+          sudo rm -rf "$CACHE"
+          mkdir -p "$CACHE/apk"
+          sudo cp "$PKGS"/linux-xiaomi-umi-*.apk "$CACHE/apk/"
+          sudo cp -a "$WORK/config_abuild" "$CACHE/config_abuild"
+          sudo chown -R "$(id -u):$(id -g)" "$CACHE"
+          ls -la "$CACHE/apk"
 
       - name: Build root filesystem and boot image
         run: |

@@ -18,7 +18,8 @@ request.
 | Kernel config | resolves; meets the pmaports `default` kconfig rules except BTF debug info |
 | Full kernel build | builds in GitHub Actions (Alpine clang 23, about 70 min on 4 cores) |
 | `pmbootstrap install` / `boot.img` | builds; header v2, gzip kernel, DTB and GPU firmware in place (checked by unpacking the image) |
-| Boot on the phone | **not tested yet** |
+| RAM boot on the phone (`fastboot boot`) | kernel boots, USB network + debug shell work, UFS detected, panel driver sends its on-sequence, ST FTS touch probes |
+| Picture on the panel | **black so far**: panel starts at brightness 1/2047; the initramfs hook now raises it and re-sends the on-sequence (untested) |
 
 Target hardware variant: CSOT panel (`j2_mp_42_02_0b`, hwlevel MP,
 `oled_panel_id` 0B) with ST FTS touch. A Samsung-panel unit needs different
@@ -88,6 +89,11 @@ Flashing the root filesystem (`pmbootstrap flasher flash_rootfs`) writes to
 boot works, and after a backup.
 
 ## Known gaps and risks
+
+- First boot log (17 Nov 2026) also shows: duplicate SPMI device registration
+  warnings, Bluetooth firmware `qca/htbtfw20.tlv` not in the initramfs, and
+  PCIe (Wi-Fi), Type-C, cpufreq and SD-card nodes stuck in deferred probe on
+  `dtbo-stubs` suppliers. None of these block the shell.
 
 - The "works" claims of the bring-up (display, touch, GPU, Wi-Fi, charging,
   Plasma Mobile) are theirs and have not been reproduced here.

@@ -1,0 +1,3 @@
+# The panel comes up at brightness 1 of 2047, which is black on this AMOLED.
+# Give the booted system a visible default until the UI restores its own value.
+ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="umi-panel", ATTR{brightness}="1500"
